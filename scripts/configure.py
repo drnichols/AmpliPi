@@ -363,6 +363,14 @@ _os_deps: Dict[str, Dict[str, Any]] = {
             'done',
             # colord is D-Bus activated (by cupsd), so disabling isn't enough; mask it
             'sudo systemctl mask --now colord.service',
+            # triggerhappy's udev rule still runs th-cmd on every input device (the CM6206 has a HID
+            # interface) and fails without the socket; mask the rule with a same-named /dev/null link
+            'for rule in /lib/udev/rules.d/*triggerhappy*.rules; do',
+            '  if [ -e "$rule" ]; then',
+            '    sudo ln -sf /dev/null "/etc/udev/rules.d/$(basename "$rule")" && echo "masked udev rule $rule"',
+            '    sudo udevadm control --reload',
+            '  fi',
+            'done',
         ]
     }
 }
