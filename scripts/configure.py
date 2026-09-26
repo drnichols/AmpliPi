@@ -343,6 +343,48 @@ _os_deps: Dict[str, Dict[str, Any]] = {
             'sudo systemctl enable bluealsa',
             'sudo systemctl enable bluetooth_agent',
         ]
+    },
+    'unused_services': {
+        'amplipi_only': True,
+        'script': [
+            # The desktop Pi OS image starts services AmpliPi never uses; they waste RAM/CPU on the CM3+
+            # and clutter the boot log. Disable (not purge) so this is reversible with 'systemctl enable'.
+            # Sockets/paths come before their services so socket activation can't restart them mid-disable.
+            # Units are checked individually since the lite image doesn't ship most of them.
+            'for unit in cups.socket cups.path cups.service cups-browsed.service \\',
+            '            exim4.service \\',
+            '            rpi-eeprom-update.service \\',
+            '            triggerhappy.socket triggerhappy.service \\',
+            '            man-db.timer',
+            'do',
+            '  if systemctl list-unit-files "$unit" | grep -q "^$unit "; then',
+            '    sudo systemctl disable --now "$unit" && echo "disabled $unit"',
+            '  fi',
+            'done',
+            # colord is D-Bus activated (by cupsd), so disabling isn't enough; mask it
+            'sudo systemctl mask --now colord.service',
+            # triggerhappy's udev rule still runs th-cmd on every input device (the CM6206 has a HID
+            # interface) and fails without the socket; mask the rule with a same-named /dev/null link
+            'for rule in /lib/udev/rules.d/*triggerhappy*.rules; do',
+            '  if [ -e "$rule" ]; then',
+            '    sudo ln -sf /dev/null "/etc/udev/rules.d/$(basename "$rule")" && echo "masked udev rule $rule"',
+            '    sudo udevadm control --reload',
+            '  fi',
+            'done',
+        ]
+    },
+    'headless': {
+        'amplipi_only': True,
+        'script': [
+            # Boot to the console instead of the desktop. The X/lightdm/LXDE session is the largest remaining
+            # RAM user and nothing in AmpliPi needs it: the front panel drives the SPI display directly and the
+            # pi user's services start at boot via linger (see _enable_linger), not via the desktop autologin.
+            # The hardware test icons in ~/Desktop/tests are only reachable from the desktop.
+            # Takes effect on the next boot; revert with 'sudo systemctl set-default graphical.target'.
+            'if [ "$(systemctl get-default)" = graphical.target ]; then',
+            '  sudo systemctl set-default multi-user.target',
+            'fi',
+        ]
     }
 }
 
