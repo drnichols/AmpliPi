@@ -691,6 +691,9 @@ WantedBy=default.target
 
 
 def _tasks_service(directory: str):
+  # The only task is a short, fire-and-forget POST to go-librespot's local API (amplipi/tasks.py), so the
+  # solo pool runs it in the worker process instead of forking one child per CPU (~28MB each on a CM3+).
+  # This also keeps Spotify Connect commands (pause, resume, volume...) in the order they were sent.
   return f"""\
 [Unit]
 Description=AmpliPi Background Tasks
@@ -699,7 +702,7 @@ After=redis-server.service
 [Service]
 Type=simple
 WorkingDirectory={directory}
-ExecStart={directory}/venv/bin/python -m celery -A amplipi.tasks worker
+ExecStart={directory}/venv/bin/python -m celery -A amplipi.tasks worker --pool=solo
 Restart=always
 
 [Install]
