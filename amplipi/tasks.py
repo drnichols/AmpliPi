@@ -10,8 +10,10 @@ def post(url: str, data: Optional[Dict] = None, timeout: int = 5) -> None:
   """ Send a POST request to the specified URL optionally with the provided data. """
   print(f'Posting {data} to {url}')
   response = requests.post(url, json=data, timeout=timeout)
-  if response.status_code == 200:
-    print(response.json())
+  if response.ok:
+    # go-librespot answers most player commands with 204 No Content, so only print a body when there is one
+    if response.content:
+      print(response.json())
   else:
     print(f'Error posting to {url}: {response.status_code}')
 
