@@ -343,6 +343,27 @@ _os_deps: Dict[str, Dict[str, Any]] = {
             'sudo systemctl enable bluealsa',
             'sudo systemctl enable bluetooth_agent',
         ]
+    },
+    'unused_services': {
+        'amplipi_only': True,
+        'script': [
+            # The desktop Pi OS image starts services AmpliPi never uses; they waste RAM/CPU on the CM3+
+            # and clutter the boot log. Disable (not purge) so this is reversible with 'systemctl enable'.
+            # Sockets/paths come before their services so socket activation can't restart them mid-disable.
+            # Units are checked individually since the lite image doesn't ship most of them.
+            'for unit in cups.socket cups.path cups.service cups-browsed.service \\',
+            '            exim4.service \\',
+            '            rpi-eeprom-update.service \\',
+            '            triggerhappy.socket triggerhappy.service \\',
+            '            man-db.timer',
+            'do',
+            '  if systemctl list-unit-files "$unit" | grep -q "^$unit "; then',
+            '    sudo systemctl disable --now "$unit" && echo "disabled $unit"',
+            '  fi',
+            'done',
+            # colord is D-Bus activated (by cupsd), so disabling isn't enough; mask it
+            'sudo systemctl mask --now colord.service',
+        ]
     }
 }
 
