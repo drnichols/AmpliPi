@@ -10,6 +10,7 @@
   * Disabled USB autosuspend for the CM6206 USB audio device
   * Disabled unused OS services (CUPS, colord, exim4, triggerhappy and its udev rule, rpi-eeprom-update, man-db timer)
   * Boot to the console instead of the unused desktop session
+  * Run the background task worker as a single process, saving ~100MB of RAM
 * Web App
   * Add warning for older versions of the webapp running on newer backends
   * Solve bug relating to single-zone groups
