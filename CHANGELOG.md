@@ -8,7 +8,7 @@
   * Added in-place preamp recovery when I2C writes fail persistently
   * Fixed all loopback dmix devices sharing one ipc_key in asound.conf, which made loopback playback devices intermittently fail to open with EINVAL (#957)
   * Disabled USB autosuspend for the CM6206 USB audio device
-  * Disabled unused OS services (CUPS, colord, exim4, triggerhappy and its udev rule, rpi-eeprom-update, man-db timer)
+  * Disabled unused OS services (CUPS, colord, exim4, triggerhappy and its udev rule, rpi-eeprom-update, man-db and apt-daily timers)
   * Boot to the console instead of the unused desktop session
 * Web App
   * Add warning for older versions of the webapp running on newer backends

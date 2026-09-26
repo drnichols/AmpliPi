@@ -351,11 +351,14 @@ _os_deps: Dict[str, Dict[str, Any]] = {
             # and clutter the boot log. Disable (not purge) so this is reversible with 'systemctl enable'.
             # Sockets/paths come before their services so socket activation can't restart them mid-disable.
             # Units are checked individually since the lite image doesn't ship most of them.
+            # The apt timers are unneeded because the updater runs apt itself (see _install_os_deps), and when
+            # APT::Periodic is enabled a background run can hold the apt lock while an update is installing.
             'for unit in cups.socket cups.path cups.service cups-browsed.service \\',
             '            exim4.service \\',
             '            rpi-eeprom-update.service \\',
             '            triggerhappy.socket triggerhappy.service \\',
-            '            man-db.timer',
+            '            man-db.timer \\',
+            '            apt-daily.timer apt-daily-upgrade.timer',
             'do',
             '  if systemctl list-unit-files "$unit" | grep -q "^$unit "; then',
             '    sudo systemctl disable --now "$unit" && echo "disabled $unit"',
