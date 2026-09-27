@@ -8,9 +8,12 @@
   * Added in-place preamp recovery when I2C writes fail persistently
   * Fixed all loopback dmix devices sharing one ipc_key in asound.conf, which made loopback playback devices intermittently fail to open with EINVAL (#957)
   * Disabled USB autosuspend for the CM6206 USB audio device
+  * Added a Sendspin (Music Assistant) stream type, each stream runs its own `sendspin` player
+  * MPRIS metadata reader now captures the current playback state on connect instead of waiting for the first change
 * Web App
   * Add warning for older versions of the webapp running on newer backends
   * Solve bug relating to single-zone groups
+  * Add Sendspin to the stream creation templates
 
 # 0.4.11
 * System

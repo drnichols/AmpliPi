@@ -270,6 +270,17 @@ _os_deps: Dict[str, Dict[str, Any]] = {
             'sudo systemctl enable udisks2-listener.service',
         ]
     },
+    'sendspin': {
+        # the sendspin client requires python >= 3.12, so it is installed as an isolated uv tool
+        # (uv fetches its own python) at ~/.local/bin/sendspin, see amplipi/streams/sendspin.py
+        'apt': ['libportaudio2', 'dbus'],
+        'script': [
+            'if [ ! -x $HOME/.local/bin/uv ] ; then',
+            '  curl -LsSf https://astral.sh/uv/install.sh | env UV_NO_MODIFY_PATH=1 sh',
+            'fi',
+            '$HOME/.local/bin/uv tool install --python 3.12 sendspin==7.5.0',
+        ]
+    },
     'dlna': {
         'apt': ['uuid-runtime', 'build-essential', 'autoconf', 'automake', 'libtool', 'pkg-config',
                 'libupnp-dev', 'libgstreamer1.0-dev', 'gstreamer1.0-plugins-base',

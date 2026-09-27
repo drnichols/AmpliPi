@@ -77,6 +77,24 @@
     ]
   },
   {
+    "name": "Sendspin (Music Assistant)",
+    "type": "sendspin",
+    "fields": [
+      {
+        "title": "Server",
+        "desc": "Optional Music Assistant host or websocket url. Leave blank to let Music Assistant discover this player. Examples: music-assistant.local; ws://192.168.1.10:8927/sendspin",
+        "name": "server",
+        "type": "text"
+      },
+      {
+        "title": "Port",
+        "desc": "Optional Music Assistant Sendspin port, defaults to 8927 if not input",
+        "name": "port",
+        "type": "text"
+      }
+    ]
+  },
+  {
     "name": "Pandora Station",
     "type": "pandora",
     "fields": [

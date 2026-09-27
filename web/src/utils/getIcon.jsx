@@ -6,6 +6,7 @@ import shairport from "@/../static/imgs/shairport.png";
 import pandora from "@/../static/imgs/pandora.png";
 import plexamp from "@/../static/imgs/plexamp.png";
 import lms from "@/../static/imgs/lms.png";
+import sendspin from "@/../static/imgs/sendspin.svg";
 import internetradio from "@/../static/imgs/internet_radio.png";
 import usb from "@/../static/imgs/usb.png";
 import rca from "@/../static/imgs/rca_inputs.jpg";
@@ -39,6 +40,9 @@ export const getIcon = (type) => {
 
     case "LMS":
       return lms;
+
+    case "SENDSPIN":
+      return sendspin;
 
     case "RCA":
       return rca;

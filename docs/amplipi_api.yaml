@@ -5838,6 +5838,16 @@ paths:
                   type: lms
                   server: mylmsserver
                   port: 9000
+              Add Sendspin player discovered by Music Assistant:
+                value:
+                  name: Kitchen
+                  type: sendspin
+              Add Sendspin player connected specifically to a Music Assistant server:
+                value:
+                  name: Kitchen
+                  type: sendspin
+                  server: music-assistant.local
+                  port: 8927
         required: true
       responses:
         '200':
@@ -12383,7 +12393,7 @@ components:
           type: string
           description: "stream type\n\n  * pandora\n  * airplay\n  * dlna\n  * internetradio\n\
             \  * spotify\n  * plexamp\n  * aux\n  * file\n  * fmradio\n  * lms\n \
-            \ * bluetooth\n  * rca\n  "
+            \ * sendspin\n  * bluetooth\n  * rca\n  "
         user:
           title: User
           type: string
@@ -12436,7 +12446,7 @@ components:
         port:
           title: Port
           type: integer
-          description: Port used by LMS server for metadata listening
+          description: Server port, used by lms (metadata listening) and sendspin
         browsable:
           title: Browsable
           type: boolean
@@ -12626,7 +12636,7 @@ components:
         port:
           title: Port
           type: integer
-          description: Port used by LMS server for metadata listening
+          description: Server port, used by lms (metadata listening) and sendspin
         temporary:
           title: Temporary
           type: boolean

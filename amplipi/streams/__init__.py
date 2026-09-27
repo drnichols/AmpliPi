@@ -39,6 +39,7 @@ from .aux import Aux
 from .file_player import FilePlayer
 from .fm_radio import FMRadio
 from .lms import LMS
+from .sendspin import Sendspin
 from .bluetooth import Bluetooth
 from .media_device import MediaDevice
 from .base_streams import *  # pylint: disable=wildcard-import we need to import these so they are accessible
@@ -59,7 +60,7 @@ DEBUG = os.environ.get('DEBUG', True)
 
 # Simple handling of stream types before we have a type heirarchy
 AnyStream = Union[RCA, AirPlay, SpotifyConnect, InternetRadio, DLNA, Pandora, Plexamp,
-                  Aux, FilePlayer, FMRadio, LMS, Bluetooth, MediaDevice]
+                  Aux, FilePlayer, FMRadio, LMS, Sendspin, Bluetooth, MediaDevice]
 
 
 def build_stream(stream: models.Stream, mock: bool = False, validate: bool = True) -> AnyStream:
@@ -93,6 +94,8 @@ def build_stream(stream: models.Stream, mock: bool = False, validate: bool = Tru
     return FMRadio(name, args['freq'], args.get('logo'), disabled=disabled, mock=mock)
   if stream.type == 'lms':
     return LMS(name, args.get('server'), args.get("port"), disabled=disabled, mock=mock)
+  if stream.type == 'sendspin':
+    return Sendspin(name, args.get('server'), args.get('port'), disabled=disabled, mock=mock)
   elif stream.type == 'bluetooth':
     return Bluetooth(name, disabled=disabled, mock=mock)
   elif stream.type == 'mediadevice':
@@ -105,6 +108,8 @@ def stream_types_available() -> List[str]:
   """
   stypes = [RCA, AirPlay, SpotifyConnect, InternetRadio, DLNA, Pandora, Plexamp,
             Aux, FilePlayer, LMS, MediaDevice]
+  if Sendspin.is_available():
+    stypes.append(Sendspin)
   if Bluetooth.is_hw_available():
     stypes.append(Bluetooth)
   if FMRadio.is_hw_available():

@@ -47,22 +47,37 @@ class MPRISMetadataReader:
     self.ok = False
     sys.exit(0)
 
+  def resolve_service_name(self) -> str:
+    """ Full MPRIS service name, a service_suffix ending in '*' matches the first service with that prefix """
+    service_name = f"org.mpris.MediaPlayer2.{self.service_suffix}"
+    if not service_name.endswith('*'):
+      return service_name
+    prefix = service_name[:-1]
+    for name in SessionMessageBus().proxy.ListNames():
+      if name.startswith(prefix):
+        return name
+    raise Exception(f'no MPRIS service matching {service_name}')
+
   def run(self):
     """Run the mpris metadata process."""
 
     while self.ok:
       metadata: Dict[str, Any] = {}
+      mpris = None
+      properties_changed = None
       try:
         logger.debug(f'connecting to {self.service_suffix}')
 
+        service_name = self.resolve_service_name()
+
         mpris = SessionMessageBus().get_proxy(
-          service_name=f"org.mpris.MediaPlayer2.{self.service_suffix}",
+          service_name=service_name,
           object_path="/org/mpris/MediaPlayer2",
           interface_name="org.mpris.MediaPlayer2.Player"
         )
 
         properties_changed = SessionMessageBus().get_proxy(
-          service_name=f"org.mpris.MediaPlayer2.{self.service_suffix}",
+          service_name=service_name,
           object_path="/org/mpris/MediaPlayer2",
           interface_name="org.freedesktop.DBus.Properties"
         )
@@ -103,6 +118,8 @@ class MPRISMetadataReader:
             json.dump(metadata, metadata_file)
 
         properties_changed.PropertiesChanged.connect(read_metadata)
+        # capture the current state too, the player may already be playing before we subscribed
+        read_metadata(None, None, None)
 
         # setup and run event loop
         try:
@@ -114,8 +131,10 @@ class MPRISMetadataReader:
       except Exception as e:
         logger.debug(f"Error getting or writing MPRIS metadata to file at {self.metadata_path}: {e}")
         try:
-          disconnect_proxy(mpris)
-          disconnect_proxy(properties_changed)
+          if mpris is not None:
+            disconnect_proxy(mpris)
+          if properties_changed is not None:
+            disconnect_proxy(properties_changed)
         except Exception as e_proxy:
           logger.error(f'Error disconnecting MPRIS/properties proxies: {e_proxy}')
           # if we can't disconnect the proxy, we should probably just stop
@@ -144,7 +163,7 @@ class MPRISMetadataReader:
 logger = logging.getLogger(__name__)
 
 parser = argparse.ArgumentParser(description='Script to read MPRIS metadata and write it to a file.')
-parser.add_argument('service_suffix', metavar='service_suffix', type=str, help='end of the MPRIS service name, e.g. "vlc" for org.mpris.MediaPlayer2.vlc')
+parser.add_argument('service_suffix', metavar='service_suffix', type=str, help='end of the MPRIS service name, e.g. "vlc" for org.mpris.MediaPlayer2.vlc, or "Sendspin.*" to match a prefix')
 parser.add_argument('metadata_path', metavar='metadata_path', type=str, help='path to the metadata file')
 parser.add_argument('-d', '--debug', action='store_true', help='print debug messages')
 args = parser.parse_args()

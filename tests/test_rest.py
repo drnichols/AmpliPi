@@ -943,6 +943,31 @@ def test_create_internetradio(client, url, valid_url, logo, valid_logo):
   else:
     assert rv.status_code == HTTPStatus.BAD_REQUEST
 
+# /stream post-stream
+
+
+@pytest.mark.parametrize('server, port', [(None, None), ('music-assistant.local', None), ('192.168.1.10', 8927)])
+def test_create_sendspin(client, server, port):
+  """ Try creating a Sendspin stream, then connect it to a source """
+  m_and_k = {'name': 'Kitchen', 'type': 'sendspin'}
+  if server:
+    m_and_k['server'] = server
+  if port:
+    m_and_k['port'] = port
+  rv = client.post('/api/stream', json=m_and_k)
+  assert rv.status_code == HTTPStatus.OK
+  jrv = rv.json()
+  assert isinstance(jrv['id'], int)
+  for k, v in m_and_k.items():
+    assert jrv[k] == v
+  sid = jrv['id']
+  rv = client.patch('/api/sources/0', json={'input': f'stream={sid}'})
+  assert rv.status_code == HTTPStatus.OK
+  assert rv.json()['sources'][0]['input'] == f'stream={sid}'
+  rv = client.delete(f'/api/streams/{sid}')
+  assert rv.status_code == HTTPStatus.OK
+  assert rv.json()['sources'][0]['input'] == ''
+
 # /streams/{streamId} get-stream
 
 

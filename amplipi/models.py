@@ -606,6 +606,7 @@ class Stream(Base):
   * file
   * fmradio
   * lms
+  * sendspin
   * bluetooth
   * rca
   """)
@@ -623,7 +624,7 @@ class Stream(Base):
   disabled: Optional[bool] = Field(
     description="Soft disable use of this stream. It won't be shown as a selectable option")
   ap2: Optional[bool] = Field(description='Is Airplay stream AirPlay2?')
-  port: Optional[int] = Field(description='Port used by LMS server for metadata listening')
+  port: Optional[int] = Field(description='Server port, used by lms (metadata listening) and sendspin')
   browsable: Optional[bool] = Field(description='Can this stream be browsed?')
   temporary: Optional[bool] = Field(description='Will this stream be removed once it is fully disconnected from all sources?')
   has_pause: Optional[bool] = Field(description='This stream can be paused, only used on FilePlayers')
@@ -736,6 +737,20 @@ class Stream(Base):
             'server': 'mylmsserver',
             'port': 9000
           },
+        },
+        'Add Sendspin player discovered by Music Assistant': {
+          'value': {
+            'name': 'Kitchen',
+            'type': 'sendspin',
+          },
+        },
+        'Add Sendspin player connected specifically to a Music Assistant server': {
+          'value': {
+            'name': 'Kitchen',
+            'type': 'sendspin',
+            'server': 'music-assistant.local',
+            'port': 8927
+          },
         }
       },
       'examples': {
@@ -808,7 +823,7 @@ class StreamUpdate(BaseUpdate):
   ap2: Optional[bool] = Field(description='Is Airplay stream AirPlay2?')
   disabled: Optional[bool] = Field(
     description="Soft disable use of this stream. It won't be shown as a selectable option")
-  port: Optional[int] = Field(description='Port used by LMS server for metadata listening')
+  port: Optional[int] = Field(description='Server port, used by lms (metadata listening) and sendspin')
   temporary: Optional[bool]
   timeout: Optional[str]
   has_pause: Optional[bool]

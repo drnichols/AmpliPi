@@ -6,9 +6,9 @@ import json
 import os
 import sys
 import logging
-from typing import List
+from typing import List, Optional
 import subprocess
-from dasbus.connection import SessionMessageBus
+from dasbus.connection import SessionMessageBus, AddressedMessageBus
 from dasbus.client.proxy import disconnect_proxy
 from amplipi import utils
 
@@ -40,12 +40,13 @@ class Metadata:
 class MPRIS:
   """A class for interfacing with an MPRIS MediaPlayer2 over dbus."""
 
-  def __init__(self, service_suffix, metadata_path) -> None:
-    self.mpris = SessionMessageBus().get_proxy(
-      service_name=f"org.mpris.MediaPlayer2.{service_suffix}",
-      object_path="/org/mpris/MediaPlayer2",
-      interface_name="org.mpris.MediaPlayer2.Player"
-    )
+  def __init__(self, service_suffix, metadata_path, bus_address: Optional[str] = None) -> None:
+    """ service_suffix may end in '*' to match the first service with that prefix (e.g. 'Sendspin.*' for
+    players that register as org.mpris.MediaPlayer2.Sendspin.instance<pid>).
+    bus_address selects a private dbus session bus, the default session bus is used when None """
+    self._bus = AddressedMessageBus(bus_address) if bus_address else SessionMessageBus()
+    self._resolved_name: Optional[str] = None
+    self.mpris = None if service_suffix.endswith('*') else self._get_proxy(f"org.mpris.MediaPlayer2.{service_suffix}")
 
     self.capabilities: List[CommandTypes] = []
 
@@ -67,29 +68,51 @@ class MPRIS:
                     self.service_suffix,
                     self.metadata_path]
 
-      self.metadata_process = subprocess.Popen(args=child_args, stdout=sys.stdout, stderr=sys.stderr)
+      env = dict(os.environ, DBUS_SESSION_BUS_ADDRESS=bus_address) if bus_address else None
+      self.metadata_process = subprocess.Popen(args=child_args, stdout=sys.stdout, stderr=sys.stderr, env=env)
     except Exception as e:
       logger.exception(f'Exception starting MPRIS metadata process: {e}')
 
+  def _get_proxy(self, service_name):
+    return self._bus.get_proxy(
+      service_name=service_name,
+      object_path="/org/mpris/MediaPlayer2",
+      interface_name="org.mpris.MediaPlayer2.Player"
+    )
+
+  def _player(self):
+    """ The player proxy, resolving a wildcard service_suffix to the currently running instance """
+    if self.service_suffix.endswith('*'):
+      prefix = f"org.mpris.MediaPlayer2.{self.service_suffix[:-1]}"
+      name = next((n for n in self._bus.proxy.ListNames() if n.startswith(prefix)), None)
+      if name is None:
+        raise Exception(f'no MPRIS service matching {prefix}*')
+      if name != self._resolved_name:
+        if self.mpris:
+          disconnect_proxy(self.mpris)
+        self.mpris = self._get_proxy(name)
+        self._resolved_name = name
+    return self.mpris
+
   def play(self) -> None:
     """Plays."""
-    self.mpris.Play()
+    self._player().Play()
 
   def pause(self) -> None:
     """Pauses."""
-    self.mpris.Pause()
+    self._player().Pause()
 
   def next(self) -> None:
     """Skips song."""
-    self.mpris.Next()
+    self._player().Next()
 
   def previous(self) -> None:
     """Goes back a song."""
-    self.mpris.Previous()
+    self._player().Previous()
 
   def play_pause(self) -> None:
     """Plays or pauses depending on current state."""
-    self.mpris.PlayPause()
+    self._player().PlayPause()
 
   def _load_metadata(self) -> Metadata:
     try:
@@ -127,16 +150,16 @@ class MPRIS:
 
     if len(self.capabilities) == 0:
 
-      if self.mpris.CanPlay:
+      if self._player().CanPlay:
         self.capabilities.append(CommandTypes.PLAY)
 
-      if self.mpris.CanPause:
+      if self._player().CanPause:
         self.capabilities.append(CommandTypes.PAUSE)
 
-      if self.mpris.CanGoNext:
+      if self._player().CanGoNext:
         self.capabilities.append(CommandTypes.NEXT)
 
-      if self.mpris.CanGoPrevious:
+      if self._player().CanGoPrevious:
         self.capabilities.append(CommandTypes.PREVIOUS)
 
     return self.capabilities
