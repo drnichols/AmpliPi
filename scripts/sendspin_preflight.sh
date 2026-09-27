@@ -29,7 +29,8 @@ elif [[ "$dpkg_arch" == "armhf" ]]; then
   warn "32-bit armhf userland: numpy, pillow, cffi and sendspin have no armv7 cp312 wheels on PyPI"
 fi
 # PyPI armv7 wheels used by sendspin (av, aiohttp, zeroconf) need manylinux_2_31
-if ver_ge "$glibc" 2.31; then pass "glibc >= 2.31 (needed by the av/aiohttp armv7 wheels)"; else fail "glibc < 2.31, av/aiohttp armv7 wheels will not install"; fi
+GLIBC_231=true
+if ver_ge "$glibc" 2.31; then pass "glibc >= 2.31 (needed by the av/aiohttp armv7 wheels)"; else fail "glibc < 2.31, av/aiohttp armv7 wheels will not install"; GLIBC_231=false; fi
 # piwheels cp313 armv7 wheels are built on Raspberry Pi OS trixie (glibc 2.41)
 PIWHEELS_OK=false
 if [[ "$dpkg_arch" != "armhf" ]]; then
@@ -118,6 +119,9 @@ echo
 echo "== Verdict"
 if [[ "$dpkg_arch" != "armhf" ]]; then
   echo "  $dpkg_arch: the planned 'uv tool install --python 3.12 sendspin' should install from wheels."
+elif ! $GLIBC_231; then
+  echo "  32-bit with glibc $glibc (< 2.31): not viable. Beyond numpy/pillow/cffi, av (PyAV, FFmpeg bindings) would also"
+  echo "  have to be compiled against a newer FFmpeg than this OS ships. Use a native (non-Python) sendspin client instead."
 elif $PIWHEELS_OK; then
   echo "  32-bit on a new enough OS: install with python 3.13 + piwheels to avoid compiling numpy:"
   echo "    uv tool install --python 3.13 --extra-index-url https://www.piwheels.org/simple --index-strategy unsafe-best-match sendspin==$SENDSPIN_VERSION"
